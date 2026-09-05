@@ -14,6 +14,8 @@ localforge start balanced
 
 The installation is self-contained in `~/.localforge`. After startup, run `opencode` from any coding directory and select the LocalForge model if a project overrides the global default.
 
+The installer also enables Bash completion for commands and profiles (`localforge start <Tab>`).
+
 ## 2. Fork and branch (contributors)
 
 On GitHub, fork the LocalForge repository into your account. Clone your fork, then create a hardware branch:

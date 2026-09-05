@@ -82,6 +82,7 @@ cat >> "$bashrc" <<'EOF'
 # >>> localforge >>>
 export PATH="$HOME/.local/bin:$PATH"
 alias localforge="$HOME/.local/bin/localforge"
+source "$HOME/.localforge/scripts/complete.sh"
 # <<< localforge <<<
 EOF
 

@@ -15,6 +15,8 @@ localforge start balanced
 
 The installer places LocalForge and its runtime in `~/.localforge`, adds the `localforge` Bash alias and `~/.local/bin` launcher, and configures OpenCode globally after the first successful `start`. You can then run `opencode` from any project; LocalForge's selected model is the default unless that project overrides it. Tagged release installers remain available from GitHub Releases once releases are published.
 
+Bash completion is installed automatically: type `localforge <Tab>` for commands and `localforge start <Tab>` (or `configure`/`reinstall`) for `balanced`, `light`, and `cpu-safe` profiles.
+
 To remove LocalForge while retaining downloaded models, run `localforge uninstall`. Use `localforge uninstall --purge` to remove model data too.
 
 ## Contributing

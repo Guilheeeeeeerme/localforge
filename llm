@@ -8,6 +8,16 @@ die() { echo "error: $*" >&2; exit 1; }
 require_python() { command -v python3 >/dev/null || die 'Python 3 is required to update the global OpenCode configuration'; }
 compose() { command -v docker >/dev/null || die "Docker is required; run ./llm doctor"; docker compose -p "$COMPOSE_PROJECT_NAME" "$@"; }
 profiles() { printf '%s\n' balanced light cpu-safe; }
+completion_commands() { printf '%s\n' install init start configure open stop status logs doctor profiles complete clean reinstall uninstall prune; }
+completion_options() {
+  case "${1:-all}" in
+    commands) completion_commands;;
+    profiles|start|configure|reinstall) profiles;;
+    uninstall) printf '%s\n' --purge --force;;
+    all) completion_commands; profiles; printf '%s\n' --purge --force;;
+    *) die "unknown completion target '$1'";;
+  esac
+}
 resolve_profile() { local p=${1:-balanced}; profiles | grep -Fxq "$p" || die "unknown profile '$p'"; echo "$p"; }
 gpu_available() { command -v nvidia-smi >/dev/null && nvidia-smi >/dev/null 2>&1 && docker info 2>/dev/null | grep -qi nvidia; }
 doctor() {
@@ -90,5 +100,5 @@ uninstall() {
   if [ "$purge" = true ]; then echo 'Uninstalled LocalForge runtime and model data.'; else echo 'Uninstalled LocalForge runtime; model data preserved.'; fi
 }
 case "${1:-}" in
-  install) exec "$ROOT/scripts/install.sh" --source "$ROOT";; profiles|complete) profiles;; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) reinstall "${2:-balanced}";; uninstall) uninstall "${@:2}";; prune) compose down --remove-orphans;; *) echo "Usage: localforge {install|init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall [profile|--force]|uninstall [--purge --force]|prune}"; exit 2;;
+  install) exec "$ROOT/scripts/install.sh" --source "$ROOT";; profiles) profiles;; complete) completion_options "${2:-all}";; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) reinstall "${2:-balanced}";; uninstall) uninstall "${@:2}";; prune) compose down --remove-orphans;; *) echo "Usage: localforge {install|init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall [profile|--force]|uninstall [--purge --force]|prune}"; exit 2;;
 esac

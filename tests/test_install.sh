@@ -15,6 +15,7 @@ printf '%s\n' '{"autoupdate":false,"provider":{"other":{"name":"Other"}}}' > "$H
 test -x "$HOME/.localforge/llm"
 test -x "$HOME/.local/bin/localforge"
 grep -Fqx '# >>> localforge >>>' "$HOME/.bashrc"
+grep -Fq 'source "$HOME/.localforge/scripts/complete.sh"' "$HOME/.bashrc"
 grep -Fq '"other"' "$HOME/.config/opencode/opencode.json"
 bash "$ROOT/scripts/install.sh" --source "$ROOT"
 test -z "$(find "$HOME/.localforge" -maxdepth 1 -name '.localforge.new.*' -print -quit)"
