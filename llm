@@ -15,6 +15,9 @@ doctor() {
   command -v docker >/dev/null && echo 'Docker: ok' || echo 'Docker: missing'
   docker compose version >/dev/null 2>&1 && echo 'Compose: ok' || echo 'Compose: missing'
   docker info >/dev/null 2>&1 && echo 'Docker daemon: reachable' || echo 'Docker daemon: unavailable (check service/socket permissions)'
+  command -v curl >/dev/null && echo 'curl: ok' || echo 'curl: missing'
+  command -v git >/dev/null && echo 'Git: ok' || echo 'Git: missing'
+  command -v opencode >/dev/null && echo "OpenCode: $(opencode --version 2>/dev/null | head -1)" || echo 'OpenCode: missing (install before opening a project)'
   gpu_available && echo 'NVIDIA acceleration: available' || echo 'NVIDIA acceleration: unavailable (CPU fallback will be used)'
   echo "Ollama endpoint: http://127.0.0.1:${OLLAMA_PORT}"
 }

@@ -32,6 +32,8 @@ The branch keeps your machine-specific profile isolated and gives you a clean pu
 
 The first run downloads Ollama and the selected model into `data/ollama`. Startup is detached by default. Use `./llm logs` for diagnostics and `./llm stop` when finished. OpenCode reads the generated `opencode.json` in this project.
 
+Before opening a coding repository, install OpenCode if needed and review [docs/opencode.md](docs/opencode.md) for the recommended `/models`, `/init`, Plan mode, permissions, and testing workflow.
+
 ## 4. Contribute your hardware profile
 
 Commit only the profile and documentation changes; model blobs and generated runtime state are ignored. Include the output of `./llm doctor`, the selected model, approximate memory use, and whether GPU or CPU mode was used. Open a pull request from your hardware branch.

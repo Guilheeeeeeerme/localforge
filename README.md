@@ -27,3 +27,24 @@ Enable Bash completion for the profile argument with `source scripts/complete.sh
 | CPU-only, 16GB+ RAM | `cpu-safe` | Qwen2.5-Coder 3B | CPU fallback |
 
 Other machines should run `./llm init`; the generated profile records the detected hardware, becomes the active local profile, and is intended to be contributed back as a new profile.
+
+## Requirements
+
+- Linux, Bash, Git, curl, and Docker Engine with the Compose plugin.
+- OpenCode installed locally. The official installer is `curl -fsSL https://opencode.ai/install | bash`; npm users can use `npm install -g opencode-ai`.
+- NVIDIA proprietary drivers and NVIDIA Container Toolkit are optional. Without them, LocalForge uses CPU mode.
+- At least 8GB free disk for the light profile; reserve 12GB or more for the balanced profile and Docker layers.
+
+Run `./llm doctor` before starting. It reports missing tools, daemon/socket permissions, GPU availability, and the local endpoint. LocalForge does not silently install kernel drivers or change system-wide Docker permissions.
+
+## After `./llm start`
+
+From the project you want to work on, run `opencode`. OpenCode reads the generated project-level `opencode.json`; project configuration has higher precedence than global configuration. In the TUI:
+
+1. Run `/models` and select the `ollama` model shown by LocalForge.
+2. Run `/init` once so OpenCode creates or updates that project’s `AGENTS.md`; review and commit it.
+3. Use `Tab` to enter Plan mode for non-trivial work, review the plan, then switch back to Build mode.
+4. Ask focused questions with file references (the `@` picker), run tests after changes, and inspect the diff before committing.
+5. Use `/undo` or `/redo` when iterating; do not grant broad tool permissions without reviewing the command.
+
+When finished, leave the model available for quick reuse or run `./llm stop`. The service is local-only at `http://127.0.0.1:11434`; do not expose that port publicly.
