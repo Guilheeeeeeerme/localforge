@@ -59,6 +59,28 @@ open_opencode() {
   [ -f opencode.json ] || die "OpenCode is not configured; run './llm start' or './llm configure'"
   exec opencode
 }
+reinstall() {
+  local p=${1:-balanced}
+  if [ "$p" = "--force" ]; then
+    p=${2:-balanced}
+    uninstall --purge --force
+  fi
+  compose down
+  compose pull
+  start "$p"
+}
+uninstall() {
+  local purge=false force=false arg
+  for arg in "$@"; do case "$arg" in --purge) purge=true;; --force) force=true;; esac; done
+  if [ "$purge" = true ] && [ "$force" != true ]; then
+    read -r -p 'Delete downloaded models in data/ollama? [y/N] ' answer
+    [[ "$answer" =~ ^[Yy]$ ]] || die 'uninstall cancelled'
+  fi
+  compose down --remove-orphans 2>/dev/null || true
+  rm -f opencode.json
+  if [ "$purge" = true ]; then rm -rf data/ollama; fi
+  if [ "$purge" = true ]; then echo 'Uninstalled LocalForge runtime and model data.'; else echo 'Uninstalled LocalForge runtime; model data preserved.'; fi
+}
 case "${1:-}" in
-  profiles|complete) profiles;; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) compose down && compose pull && compose up -d;; prune) compose down --remove-orphans;; *) echo "Usage: ./llm {init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall|prune}"; exit 2;;
+  profiles|complete) profiles;; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) reinstall "${2:-balanced}";; uninstall) uninstall "${@:2}";; prune) compose down --remove-orphans;; *) echo "Usage: ./llm {init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall [profile|--force]|uninstall [--purge --force]|prune}"; exit 2;;
 esac

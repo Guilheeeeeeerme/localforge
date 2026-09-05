@@ -17,7 +17,7 @@ Read [GETTING_STARTED.md](GETTING_STARTED.md) before first use. Use `./start [ba
 
 Enable Bash completion for the profile argument with `source scripts/complete.sh`.
 
-`clean` removes project containers, `reinstall` recreates them while retaining models, and `prune` removes stopped project containers/orphans. Review `docs/troubleshooting.md` before changing host GPU drivers.
+`clean` removes project containers. `reinstall [profile]` recreates them, pulls the selected model if needed, and regenerates the OpenCode configuration while retaining cached models. `reinstall --force [profile]` deletes the model cache first, then performs a complete model/runtime/OpenCode rebuild. `uninstall` removes containers and generated `opencode.json` but preserves model data; `uninstall --purge` also deletes downloaded models after confirmation (`uninstall --purge --force` skips the prompt). `prune` removes stopped project containers/orphans. Review `docs/troubleshooting.md` before changing host GPU drivers.
 
 ## Supported computers
 
