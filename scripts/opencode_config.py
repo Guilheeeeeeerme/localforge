@@ -87,11 +87,15 @@ def apply(args: argparse.Namespace) -> None:
     config = load(path)
     backup(path)
     providers = config.setdefault("provider", {})
+    model_config = {"name": f"{args.model} ({args.profile})"}
+    variants = [item.strip() for item in (args.reasoning_variants or "").split(",") if item.strip()]
+    if variants:
+        model_config["variants"] = {variant: {"reasoningEffort": variant} for variant in variants}
     providers[PROVIDER_ID] = {
         "npm": "@ai-sdk/openai-compatible",
         "name": "LocalForge (local)",
         "options": {"baseURL": args.base_url},
-        "models": {args.model: {"name": f"{args.model} ({args.profile})"}},
+        "models": {args.model: model_config},
     }
     config["model"] = f"{PROVIDER_ID}/{args.model}"
     write(path, config)
@@ -125,6 +129,7 @@ def main() -> None:
     apply_parser.add_argument("--model", required=True)
     apply_parser.add_argument("--profile", required=True)
     apply_parser.add_argument("--base-url", required=True)
+    apply_parser.add_argument("--reasoning-variants", default="")
     actions.add_parser("remove")
     args = parser.parse_args()
     try:

@@ -38,6 +38,8 @@ chmod +x "$TMP/bin/docker" "$TMP/bin/curl" "$TMP/bin/opencode"
 PATH="$TMP/bin:$PATH" bash --noprofile --norc -c "shopt -s expand_aliases; source '$HOME/.bashrc'; eval 'localforge start light'"
 grep -Fq '"localforge"' "$HOME/.config/opencode/opencode.json"
 grep -Fq '"model": "localforge/qwen2.5-coder:3b"' "$HOME/.config/opencode/opencode.json"
+python3 "$ROOT/scripts/opencode_config.py" apply --model test-reasoning --profile test --base-url http://127.0.0.1:11434/v1 --reasoning-variants low,high >/dev/null
+python3 -c "import json; d=json.load(open('$HOME/.config/opencode/opencode.json')); assert set(d['provider']['localforge']['models']['test-reasoning']['variants']) == {'low', 'high'}"
 
 "$HOME/.local/bin/localforge" uninstall --force
 test ! -e "$HOME/.local/bin/localforge"

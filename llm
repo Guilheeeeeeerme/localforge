@@ -18,6 +18,27 @@ completion_options() {
     *) die "unknown completion target '$1'";;
   esac
 }
+usage() { echo 'Usage: localforge {install|init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall [profile|--force]|uninstall [--purge --force]|prune}'; }
+command_help() {
+  case "${1:-}" in
+    install) echo 'Usage: localforge install'; echo 'Install LocalForge into ~/.localforge.';;
+    init) echo 'Usage: localforge init'; echo 'Create a hardware profile.';;
+    start) echo 'Usage: localforge start [profile]'; echo 'Start Ollama and configure the selected model.';;
+    configure) echo 'Usage: localforge configure [profile]'; echo 'Configure the selected model in global OpenCode settings.';;
+    open) echo 'Usage: localforge open'; echo 'Launch OpenCode.';;
+    stop) echo 'Usage: localforge stop'; echo 'Stop LocalForge containers.';;
+    status) echo 'Usage: localforge status'; echo 'Show LocalForge container status.';;
+    logs) echo 'Usage: localforge logs'; echo 'Follow LocalForge container logs.';;
+    doctor) echo 'Usage: localforge doctor'; echo 'Check dependencies and runtime health.';;
+    profiles) echo 'Usage: localforge profiles'; echo 'List available hardware profiles.';;
+    complete) echo 'Usage: localforge complete [commands|profiles|reasoning|uninstall]'; echo 'Print completion candidates.';;
+    clean) echo 'Usage: localforge clean'; echo 'Remove LocalForge containers.';;
+    reinstall) echo 'Usage: localforge reinstall [profile|--force]'; echo 'Recreate the runtime and selected model.';;
+    uninstall) echo 'Usage: localforge uninstall [--purge] [--force]'; echo 'Remove LocalForge while optionally deleting models.';;
+    prune) echo 'Usage: localforge prune'; echo 'Remove stopped containers and orphans.';;
+    *) usage;;
+  esac
+}
 resolve_profile() { local p=${1:-balanced}; profiles | grep -Fxq "$p" || die "unknown profile '$p'"; echo "$p"; }
 gpu_available() { command -v nvidia-smi >/dev/null && nvidia-smi >/dev/null 2>&1 && docker info 2>/dev/null | grep -qi nvidia; }
 doctor() {
@@ -64,7 +85,9 @@ configure_opencode() {
   [ -n "$model" ] || die "no model configured for $p"
   sed "s/__MODEL__/$model/g; s/__PROFILE__/$p/g" "$PROFILE_DIR/opencode.json.in" > opencode.json
   require_python
-  python3 "$ROOT/scripts/opencode_config.py" apply --model "$model" --profile "$p" --base-url "http://127.0.0.1:${OLLAMA_PORT}/v1"
+  local reasoning_variants
+  reasoning_variants=$(awk -v p="$p" '$0 ~ "  " p ":" {inside=1; next} inside && /^  [a-z0-9-]+:/ {exit} inside && /reasoning_variants:/ {sub(/.*reasoning_variants:[[:space:]]*/, ""); print; exit}' "$PROFILE_DIR/model.yaml")
+  python3 "$ROOT/scripts/opencode_config.py" apply --model "$model" --profile "$p" --base-url "http://127.0.0.1:${OLLAMA_PORT}/v1" --reasoning-variants "$reasoning_variants"
 }
 open_opencode() {
   command -v opencode >/dev/null || die 'OpenCode is required; install with: curl -fsSL https://opencode.ai/install | bash'
@@ -99,6 +122,9 @@ uninstall() {
   fi
   if [ "$purge" = true ]; then echo 'Uninstalled LocalForge runtime and model data.'; else echo 'Uninstalled LocalForge runtime; model data preserved.'; fi
 }
+for arg in "$@"; do
+  if [ "$arg" = '--help' ]; then command_help "${1:-}"; exit 0; fi
+done
 case "${1:-}" in
-  install) exec "$ROOT/scripts/install.sh" --source "$ROOT";; profiles) profiles;; complete) completion_options "${2:-all}";; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) reinstall "${2:-balanced}";; uninstall) uninstall "${@:2}";; prune) compose down --remove-orphans;; *) echo "Usage: localforge {install|init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall [profile|--force]|uninstall [--purge --force]|prune}"; exit 2;;
+  install) exec "$ROOT/scripts/install.sh" --source "$ROOT";; profiles) profiles;; complete) completion_options "${2:-all}";; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) reinstall "${2:-balanced}";; uninstall) uninstall "${@:2}";; prune) compose down --remove-orphans;; *) usage; exit 2;;
 esac
