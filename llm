@@ -3,7 +3,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 cd "$ROOT"
 source versions.env
-PROFILE_DIR="profiles/intel-i7-13620h-rtx3050-6gb-32gb"
+PROFILE_DIR=$(cat .hardware-profile 2>/dev/null || echo "profiles/intel-i7-13620h-rtx3050-6gb-32gb")
 die() { echo "error: $*" >&2; exit 1; }
 compose() { command -v docker >/dev/null || die "Docker is required; run ./llm doctor"; docker compose -p "$COMPOSE_PROJECT_NAME" "$@"; }
 profiles() { printf '%s\n' balanced light cpu-safe; }
@@ -27,6 +27,7 @@ init_profile() {
   cp "$PROFILE_DIR/opencode.json.in" "$dir/opencode.json.in"
   { echo "HARDWARE_ID=$id"; echo 'DEFAULT_PROFILE=balanced'; "$ROOT/scripts/detect-hardware.sh"; } > "$dir/profile.env"
   sed -i "s/intel-i7-13620h-rtx3050-6gb-32gb/$id/g" "$dir/model.yaml"
+  printf '%s\n' "$dir" > .hardware-profile
   echo "Created $dir from the current hardware analysis. Review it, then run: ./llm start balanced"
 }
 start() {

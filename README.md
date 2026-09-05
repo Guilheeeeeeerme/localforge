@@ -26,4 +26,4 @@ Enable Bash completion for the profile argument with `source scripts/complete.sh
 | NVIDIA GPU with 4GB+ VRAM, 8GB+ RAM | `light` | Qwen2.5-Coder 3B | Best-effort compatible |
 | CPU-only, 16GB+ RAM | `cpu-safe` | Qwen2.5-Coder 3B | CPU fallback |
 
-Other machines should run `./llm init`; the generated profile records the detected hardware and is intended to be contributed back as a new profile.
+Other machines should run `./llm init`; the generated profile records the detected hardware, becomes the active local profile, and is intended to be contributed back as a new profile.

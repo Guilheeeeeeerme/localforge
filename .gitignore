@@ -2,3 +2,4 @@ data/ollama/
 logs/
 opencode.json
 .env
+.hardware-profile
