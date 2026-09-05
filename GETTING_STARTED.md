@@ -1,0 +1,41 @@
+# Getting started with LocalForge
+
+LocalForge turns a fresh computer into a local OpenCode coding backend. It performs the same analysis used for the reference profile: CPU model and thread count, system memory, GPU model/VRAM class, Docker availability, NVIDIA runtime availability, disk space, and a model-size fit check.
+
+## 1. Fork and branch
+
+On GitHub, fork the LocalForge repository into your account. Clone your fork, then create a hardware branch:
+
+```bash
+git clone https://github.com/<your-user>/localforge.git
+cd localforge
+git switch -c hardware/<short-machine-name>
+```
+
+The branch keeps your machine-specific profile isolated and gives you a clean pull request if you want to contribute it.
+
+## 2. Analyze and create your profile
+
+```bash
+./llm init
+./llm doctor
+./llm profiles
+```
+
+`init` creates `profiles/custom-<hostname>/` with the detected hardware facts, model catalog, and OpenCode template. Review the generated `model.yaml`; do not claim a GPU profile unless `nvidia-smi` and Docker GPU access both work.
+
+## 3. Start OpenCode’s local backend
+
+```bash
+./llm start balanced
+```
+
+The first run downloads Ollama and the selected model into `data/ollama`. Startup is detached by default. Use `./llm logs` for diagnostics and `./llm stop` when finished. OpenCode reads the generated `opencode.json` in this project.
+
+## 4. Contribute your hardware profile
+
+Commit only the profile and documentation changes; model blobs and generated runtime state are ignored. Include the output of `./llm doctor`, the selected model, approximate memory use, and whether GPU or CPU mode was used. Open a pull request from your hardware branch.
+
+## Safety and privacy
+
+The service binds to `127.0.0.1`; it is not exposed to the network. Hardware detection stays local. Never commit `.env`, `data/ollama`, credentials, or model files.

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+cd "$ROOT"
+source versions.env
+PROFILE_DIR="profiles/intel-i7-13620h-rtx3050-6gb-32gb"
+die() { echo "error: $*" >&2; exit 1; }
+compose() { command -v docker >/dev/null || die "Docker is required; run ./llm doctor"; docker compose -p "$COMPOSE_PROJECT_NAME" "$@"; }
+profiles() { printf '%s\n' balanced light cpu-safe; }
+resolve_profile() { local p=${1:-balanced}; profiles | grep -Fxq "$p" || die "unknown profile '$p'"; echo "$p"; }
+gpu_available() { command -v nvidia-smi >/dev/null && nvidia-smi >/dev/null 2>&1 && docker info 2>/dev/null | grep -qi nvidia; }
+doctor() {
+  echo "Hardware profile: intel-i7-13620h-rtx3050-6gb-32gb"
+  "$ROOT/scripts/detect-hardware.sh" | sed '/HARDWARE_ID=/d'
+  command -v docker >/dev/null && echo 'Docker: ok' || echo 'Docker: missing'
+  docker compose version >/dev/null 2>&1 && echo 'Compose: ok' || echo 'Compose: missing'
+  docker info >/dev/null 2>&1 && echo 'Docker daemon: reachable' || echo 'Docker daemon: unavailable (check service/socket permissions)'
+  gpu_available && echo 'NVIDIA acceleration: available' || echo 'NVIDIA acceleration: unavailable (CPU fallback will be used)'
+  echo "Ollama endpoint: http://127.0.0.1:${OLLAMA_PORT}"
+}
+init_profile() {
+  local id="custom-$(hostname | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')"
+  local dir="profiles/$id"
+  [ -e "$dir" ] && die "profile already exists: $dir"
+  mkdir -p "$dir"
+  cp "$PROFILE_DIR/model.yaml" "$dir/model.yaml"
+  cp "$PROFILE_DIR/opencode.json.in" "$dir/opencode.json.in"
+  { echo "HARDWARE_ID=$id"; echo 'DEFAULT_PROFILE=balanced'; "$ROOT/scripts/detect-hardware.sh"; } > "$dir/profile.env"
+  sed -i "s/intel-i7-13620h-rtx3050-6gb-32gb/$id/g" "$dir/model.yaml"
+  echo "Created $dir from the current hardware analysis. Review it, then run: ./llm start balanced"
+}
+start() {
+  local p; p=$(resolve_profile "${1:-balanced}"); mkdir -p data/ollama logs
+  docker info >/dev/null 2>&1 || die 'Docker daemon is unavailable; run ./llm doctor and start Docker'
+  local files=(-f compose.yaml); gpu_available && files+=(-f compose.gpu.yaml) && echo 'Using NVIDIA acceleration' || echo 'Using CPU fallback'
+  compose "${files[@]}" up -d
+  for _ in {1..30}; do curl -fsS "http://127.0.0.1:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1 && break; sleep 2; done
+  curl -fsS "http://127.0.0.1:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1 || die 'Ollama did not become healthy; run ./llm logs'
+  local model; model=$(awk -v p="$p" '$0 ~ "  " p ":" {found=1} found && /ollama_tag:/ {print $2; exit}' "$PROFILE_DIR/model.yaml")
+  [ -n "$model" ] || die "no model configured for $p"
+  compose "${files[@]}" exec -T ollama ollama pull "$model"
+  sed "s/__MODEL__/$model/g; s/__PROFILE__/$p/g" "$PROFILE_DIR/opencode.json.in" > opencode.json
+  echo "Started $model ($p). OpenCode config: $ROOT/opencode.json"
+}
+case "${1:-}" in
+  profiles|complete) profiles;; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) compose down && compose pull && compose up -d;; prune) compose down --remove-orphans;; *) echo "Usage: ./llm {init|start [profile]|stop|status|logs|doctor|profiles|complete|clean|reinstall|prune}"; exit 2;;
+esac

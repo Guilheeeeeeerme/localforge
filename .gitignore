@@ -1,0 +1,4 @@
+data/ollama/
+logs/
+opencode.json
+.env
