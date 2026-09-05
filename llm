@@ -5,6 +5,7 @@ cd "$ROOT"
 source versions.env
 PROFILE_DIR=$(cat .hardware-profile 2>/dev/null || echo "profiles/intel-i7-13620h-rtx3050-6gb-32gb")
 die() { echo "error: $*" >&2; exit 1; }
+require_python() { command -v python3 >/dev/null || die 'Python 3 is required to update the global OpenCode configuration'; }
 compose() { command -v docker >/dev/null || die "Docker is required; run ./llm doctor"; docker compose -p "$COMPOSE_PROJECT_NAME" "$@"; }
 profiles() { printf '%s\n' balanced light cpu-safe; }
 resolve_profile() { local p=${1:-balanced}; profiles | grep -Fxq "$p" || die "unknown profile '$p'"; echo "$p"; }
@@ -52,7 +53,8 @@ configure_opencode() {
   [ -n "$model" ] || model=$(awk -v p="$p" '$0 ~ "  " p ":" {found=1} found && /ollama_tag:/ {print $2; exit}' "$PROFILE_DIR/model.yaml")
   [ -n "$model" ] || die "no model configured for $p"
   sed "s/__MODEL__/$model/g; s/__PROFILE__/$p/g" "$PROFILE_DIR/opencode.json.in" > opencode.json
-  echo "OpenCode configured at $ROOT/opencode.json for $model ($p)"
+  require_python
+  python3 "$ROOT/scripts/opencode_config.py" apply --model "$model" --profile "$p" --base-url "http://127.0.0.1:${OLLAMA_PORT}/v1"
 }
 open_opencode() {
   command -v opencode >/dev/null || die 'OpenCode is required; install with: curl -fsSL https://opencode.ai/install | bash'
@@ -77,10 +79,16 @@ uninstall() {
     [[ "$answer" =~ ^[Yy]$ ]] || die 'uninstall cancelled'
   fi
   compose down --remove-orphans 2>/dev/null || true
+  if command -v python3 >/dev/null; then python3 "$ROOT/scripts/opencode_config.py" remove; else echo 'warning: Python 3 is unavailable; LocalForge provider remains in OpenCode config' >&2; fi
   rm -f opencode.json
   if [ "$purge" = true ]; then rm -rf data/ollama; fi
+  if [ "$ROOT" = "$HOME/.localforge" ]; then
+    rm -f "$HOME/.local/bin/localforge"
+    if [ -f "$HOME/.bashrc" ]; then sed -i '/^# >>> localforge >>>$/,/^# <<< localforge <<</d' "$HOME/.bashrc"; fi
+    find "$ROOT" -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf -- {} +
+  fi
   if [ "$purge" = true ]; then echo 'Uninstalled LocalForge runtime and model data.'; else echo 'Uninstalled LocalForge runtime; model data preserved.'; fi
 }
 case "${1:-}" in
-  profiles|complete) profiles;; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) reinstall "${2:-balanced}";; uninstall) uninstall "${@:2}";; prune) compose down --remove-orphans;; *) echo "Usage: ./llm {init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall [profile|--force]|uninstall [--purge --force]|prune}"; exit 2;;
+  install) exec "$ROOT/scripts/install.sh" --source "$ROOT";; profiles|complete) profiles;; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) reinstall "${2:-balanced}";; uninstall) uninstall "${@:2}";; prune) compose down --remove-orphans;; *) echo "Usage: localforge {install|init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall [profile|--force]|uninstall [--purge --force]|prune}"; exit 2;;
 esac

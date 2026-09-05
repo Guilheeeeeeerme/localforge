@@ -4,6 +4,23 @@ LocalForge is a hardware-aware local coding assistant launcher. It analyzes a co
 
 The repository contains a validated profile for an Intel i7-13620H laptop with 32GB RAM and an RTX 3050 6GB GPU. The same flow can create a custom profile for another computer.
 
+## Install
+
+For normal use, copy and paste this single command. It clones the current GitHub branch, installs LocalForge, updates Bash, and activates the command in your current terminal:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Guilheeeeeeerme/localforge/main/scripts/install.sh | bash && source ~/.bashrc
+localforge start balanced
+```
+
+The installer places LocalForge and its runtime in `~/.localforge`, adds the `localforge` Bash alias and `~/.local/bin` launcher, and configures OpenCode globally after the first successful `start`. You can then run `opencode` from any project; LocalForge's selected model is the default unless that project overrides it. Tagged release installers remain available from GitHub Releases once releases are published.
+
+To remove LocalForge while retaining downloaded models, run `localforge uninstall`. Use `localforge uninstall --purge` to remove model data too.
+
+## Contributing
+
+Contributors should clone the repository and can install the checked-out source locally with `./llm install`.
+
 ```bash
 ./llm init
 ./llm doctor
@@ -17,7 +34,7 @@ Read [GETTING_STARTED.md](GETTING_STARTED.md) before first use. Use `./start [ba
 
 Enable Bash completion for the profile argument with `source scripts/complete.sh`.
 
-`clean` removes project containers. `reinstall [profile]` recreates them, pulls the selected model if needed, and regenerates the OpenCode configuration while retaining cached models. `reinstall --force [profile]` deletes the model cache first, then performs a complete model/runtime/OpenCode rebuild. `uninstall` removes containers and generated `opencode.json` but preserves model data; `uninstall --purge` also deletes downloaded models after confirmation (`uninstall --purge --force` skips the prompt). `prune` removes stopped project containers/orphans. Review `docs/troubleshooting.md` before changing host GPU drivers.
+`clean` removes project containers. `reinstall [profile]` recreates them, pulls the selected model if needed, and regenerates the OpenCode configuration while retaining cached models. `reinstall --force [profile]` deletes the model cache first, then performs a complete model/runtime/OpenCode rebuild. `uninstall` removes containers, the LocalForge launcher/Bash block, and LocalForge-owned OpenCode settings while preserving model data; `uninstall --purge` also deletes downloaded models after confirmation (`uninstall --purge --force` skips the prompt). `prune` removes stopped project containers/orphans. Review `docs/troubleshooting.md` before changing host GPU drivers.
 
 ## Supported computers
 
@@ -40,7 +57,7 @@ Run `./llm doctor` before starting. It reports missing tools, daemon/socket perm
 
 ## After `./llm start`
 
-From the project you want to work on, run `opencode`. OpenCode reads the generated project-level `opencode.json`; project configuration has higher precedence than global configuration. In the TUI:
+From any project, run `opencode`. LocalForge registers its selected model in OpenCode's global configuration; a project-level `opencode.json` can override it. In the TUI:
 
 1. Run `/models` and select the `ollama` model shown by LocalForge.
 2. Run `/init` once so OpenCode creates or updates that project’s `AGENTS.md`; review and commit it.

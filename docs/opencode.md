@@ -1,6 +1,6 @@
 # OpenCode workflow
 
-LocalForge generates a project-level `opencode.json` after the first successful start. OpenCode loads project configuration from the current directory and gives it precedence over global defaults. The generated provider uses Ollama’s OpenAI-compatible `/v1` endpoint.
+LocalForge updates the global `~/.config/opencode/opencode.json` after the first successful start. Its dedicated `localforge` provider uses Ollama’s OpenAI-compatible `/v1` endpoint, so it is available from every project. A project-level `opencode.json` can still override the global default.
 
 Install OpenCode with the official installer:
 
