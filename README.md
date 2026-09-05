@@ -8,11 +8,12 @@ The repository contains a validated profile for an Intel i7-13620H laptop with 3
 ./llm init
 ./llm doctor
 ./llm start balanced
+./llm open
 ./llm status
 ./llm stop
 ```
 
-Read [GETTING_STARTED.md](GETTING_STARTED.md) before first use. Use `./start [balanced|light|cpu-safe]` and `./stop` as aliases. After startup, OpenCode uses the generated project-local `opencode.json` and Ollama at `http://127.0.0.1:11434/v1`.
+Read [GETTING_STARTED.md](GETTING_STARTED.md) before first use. Use `./start [balanced|light|cpu-safe]` and `./stop` as aliases. `./llm start` now validates OpenCode, starts Ollama, pulls the model, and configures the project-local `opencode.json`; `./llm open` launches OpenCode with that configuration.
 
 Enable Bash completion for the profile argument with `source scripts/complete.sh`.
 

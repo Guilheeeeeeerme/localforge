@@ -36,6 +36,7 @@ init_profile() {
 start() {
   local p; p=$(resolve_profile "${1:-balanced}"); mkdir -p data/ollama logs
   docker info >/dev/null 2>&1 || die 'Docker daemon is unavailable; run ./llm doctor and start Docker'
+  command -v opencode >/dev/null || die 'OpenCode is required; install with: curl -fsSL https://opencode.ai/install | bash'
   local files=(-f compose.yaml); gpu_available && files+=(-f compose.gpu.yaml) && echo 'Using NVIDIA acceleration' || echo 'Using CPU fallback'
   compose "${files[@]}" up -d
   for _ in {1..30}; do curl -fsS "http://127.0.0.1:${OLLAMA_PORT}/api/tags" >/dev/null 2>&1 && break; sleep 2; done
@@ -43,9 +44,21 @@ start() {
   local model; model=$(awk -v p="$p" '$0 ~ "  " p ":" {found=1} found && /ollama_tag:/ {print $2; exit}' "$PROFILE_DIR/model.yaml")
   [ -n "$model" ] || die "no model configured for $p"
   compose "${files[@]}" exec -T ollama ollama pull "$model"
+  configure_opencode "$p" "$model"
+  echo "Started $model ($p). OpenCode is configured; run './llm open' or 'opencode'."
+}
+configure_opencode() {
+  local p=${1:-balanced} model=${2:-}
+  [ -n "$model" ] || model=$(awk -v p="$p" '$0 ~ "  " p ":" {found=1} found && /ollama_tag:/ {print $2; exit}' "$PROFILE_DIR/model.yaml")
+  [ -n "$model" ] || die "no model configured for $p"
   sed "s/__MODEL__/$model/g; s/__PROFILE__/$p/g" "$PROFILE_DIR/opencode.json.in" > opencode.json
-  echo "Started $model ($p). OpenCode config: $ROOT/opencode.json"
+  echo "OpenCode configured at $ROOT/opencode.json for $model ($p)"
+}
+open_opencode() {
+  command -v opencode >/dev/null || die 'OpenCode is required; install with: curl -fsSL https://opencode.ai/install | bash'
+  [ -f opencode.json ] || die "OpenCode is not configured; run './llm start' or './llm configure'"
+  exec opencode
 }
 case "${1:-}" in
-  profiles|complete) profiles;; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) compose down && compose pull && compose up -d;; prune) compose down --remove-orphans;; *) echo "Usage: ./llm {init|start [profile]|stop|status|logs|doctor|profiles|complete|clean|reinstall|prune}"; exit 2;;
+  profiles|complete) profiles;; doctor) doctor;; init) init_profile;; start) start "${2:-balanced}";; configure) configure_opencode "${2:-balanced}";; open) open_opencode;; stop) compose stop;; status) compose ps;; logs) compose logs -f;; clean) compose down;; reinstall) compose down && compose pull && compose up -d;; prune) compose down --remove-orphans;; *) echo "Usage: ./llm {init|start [profile]|configure [profile]|open|stop|status|logs|doctor|profiles|complete|clean|reinstall|prune}"; exit 2;;
 esac

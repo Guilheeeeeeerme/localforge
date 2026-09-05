@@ -28,9 +28,10 @@ The branch keeps your machine-specific profile isolated and gives you a clean pu
 
 ```bash
 ./llm start balanced
+./llm open
 ```
 
-The first run downloads Ollama and the selected model into `data/ollama`. Startup is detached by default. Use `./llm logs` for diagnostics and `./llm stop` when finished. OpenCode reads the generated `opencode.json` in this project.
+The first run downloads Ollama and the selected model into `data/ollama`, validates that OpenCode is installed, and generates the project-local `opencode.json`. Startup is detached by default. Use `./llm open` to launch the configured OpenCode session, `./llm logs` for diagnostics, and `./llm stop` when finished.
 
 Before opening a coding repository, install OpenCode if needed and review [docs/opencode.md](docs/opencode.md) for the recommended `/models`, `/init`, Plan mode, permissions, and testing workflow.
 
